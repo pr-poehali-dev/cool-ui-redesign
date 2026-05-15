@@ -5,6 +5,7 @@ import Header from "@/components/Header"
 import ProjectsSection from "@/components/ProjectsSection"
 import AboutSection from "@/components/AboutSection"
 import NotesSection from "@/components/NotesSection"
+import PlannerSection from "@/components/PlannerSection"
 
 const Index = () => {
   return (
@@ -19,6 +20,7 @@ const Index = () => {
       <div className="relative bg-black/95">
         <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-black/80 to-black pointer-events-none" style={{ height: "120px", top: "-60px" }} />
         <AboutSection />
+        <PlannerSection />
         <ProjectsSection />
         <NotesSection />
       </div>

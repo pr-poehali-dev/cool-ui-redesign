@@ -17,6 +17,12 @@ export default function Header() {
             Обо мне
           </a>
           <a
+            href="#planner"
+            className="text-white hover:text-neutral-400 transition-colors duration-300 uppercase text-sm"
+          >
+            Планер
+          </a>
+          <a
             href="#notes"
             className="text-white hover:text-neutral-400 transition-colors duration-300 uppercase text-sm"
           >
