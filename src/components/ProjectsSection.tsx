@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Icon from "@/components/ui/icon"
 
 const initialProjects = [
@@ -25,8 +25,21 @@ const initialProjects = [
   },
 ]
 
+const STORAGE_KEY = "my_projects"
+
 export default function ProjectsSection() {
-  const [projects, setProjects] = useState(initialProjects)
+  const [projects, setProjects] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      return saved ? JSON.parse(saved) : initialProjects
+    } catch {
+      return initialProjects
+    }
+  })
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(projects))
+  }, [projects])
+
   const [editing, setEditing] = useState<number | null>(null)
   const [editTitle, setEditTitle] = useState("")
   const [editDesc, setEditDesc] = useState("")

@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Icon from "@/components/ui/icon"
 
 interface Note {
@@ -7,13 +7,27 @@ interface Note {
   date: string
 }
 
+const STORAGE_KEY = "my_notes"
 const today = () => new Date().toLocaleDateString("ru-RU", { day: "numeric", month: "long" })
 
+const defaultNotes: Note[] = [
+  { id: 1, text: "Первая заметка — напиши здесь что угодно!", date: today() },
+]
+
 export default function NotesSection() {
-  const [notes, setNotes] = useState<Note[]>([
-    { id: 1, text: "Первая заметка — напиши здесь что угодно!", date: today() },
-  ])
+  const [notes, setNotes] = useState<Note[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      return saved ? JSON.parse(saved) : defaultNotes
+    } catch {
+      return defaultNotes
+    }
+  })
   const [input, setInput] = useState("")
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(notes))
+  }, [notes])
 
   const addNote = () => {
     if (!input.trim()) return
