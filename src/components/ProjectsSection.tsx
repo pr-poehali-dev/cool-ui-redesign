@@ -45,6 +45,7 @@ export default function ProjectsSection() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(projects))
   }, [projects])
 
+  const [filter, setFilter] = useState<Tag | "Все">("Все")
   const [editing, setEditing] = useState<number | null>(null)
   const [editTitle, setEditTitle] = useState("")
   const [editDesc, setEditDesc] = useState("")
@@ -103,9 +104,18 @@ export default function ProjectsSection() {
     setProjects((prev) => prev.filter((p) => p.id !== id))
   }
 
+  const filtered = filter === "Все" ? projects : projects.filter((p) => p.tag === filter)
+
+  const filterTabs: { label: Tag | "Все"; icon: string }[] = [
+    { label: "Все", icon: "LayoutGrid" },
+    { label: "Планирую", icon: "Clock" },
+    { label: "В работе", icon: "Zap" },
+    { label: "Готово", icon: "CheckCircle2" },
+  ]
+
   return (
     <section id="projects" className="relative z-20 px-8 py-20 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-10">
+      <div className="flex items-center justify-between mb-6">
         <div>
           <p className="text-white/40 text-xs uppercase tracking-widest mb-1">Раздел</p>
           <h2 className="text-3xl font-light text-white">
@@ -121,8 +131,34 @@ export default function ProjectsSection() {
         </button>
       </div>
 
+      {/* Фильтры */}
+      <div className="flex gap-2 mb-8 flex-wrap">
+        {filterTabs.map((tab) => {
+          const count = tab.label === "Все" ? projects.length : projects.filter((p) => p.tag === tab.label).length
+          const isActive = filter === tab.label
+          return (
+            <button
+              key={tab.label}
+              onClick={() => setFilter(tab.label)}
+              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs border transition-all duration-200 ${
+                isActive
+                  ? "bg-white text-black border-white font-medium"
+                  : "border-white/15 text-white/50 hover:border-white/30 hover:text-white/80"
+              }`}
+            >
+              <Icon name={tab.icon as "Clock"} size={11} />
+              {tab.label}
+              <span className={`ml-0.5 ${isActive ? "text-black/50" : "text-white/30"}`}>{count}</span>
+            </button>
+          )
+        })}
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {projects.map((p) => {
+        {filtered.length === 0 && (
+          <p className="text-white/30 text-sm col-span-3 text-center py-10">Нет проектов с таким статусом</p>
+        )}
+        {filtered.map((p) => {
           const tagMeta = TAGS.find((t) => t.label === p.tag) ?? TAGS[0]
           return (
             <div
