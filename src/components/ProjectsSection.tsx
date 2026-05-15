@@ -52,6 +52,9 @@ export default function ProjectsSection() {
   const [tagPicker, setTagPicker] = useState<number | null>(null)
   const tagPickerRef = useRef<HTMLDivElement>(null)
 
+  const dragId = useRef<number | null>(null)
+  const [dragOver, setDragOver] = useState<number | null>(null)
+
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (tagPickerRef.current && !tagPickerRef.current.contains(e.target as Node)) {
@@ -85,14 +88,13 @@ export default function ProjectsSection() {
 
   const addProject = () => {
     const id = Date.now()
-    const newProject: Project = {
+    setProjects((prev) => [...prev, {
       id,
       title: "Новый проект",
       description: "Добавьте описание",
       tag: "Планирую",
       color: TAG_COLORS["Планирую"],
-    }
-    setProjects((prev) => [...prev, newProject])
+    }])
     setTimeout(() => {
       setEditing(id)
       setEditTitle("Новый проект")
@@ -102,6 +104,37 @@ export default function ProjectsSection() {
 
   const deleteProject = (id: number) => {
     setProjects((prev) => prev.filter((p) => p.id !== id))
+  }
+
+  const onDragStart = (id: number) => {
+    dragId.current = id
+  }
+
+  const onDragOver = (e: React.DragEvent, id: number) => {
+    e.preventDefault()
+    setDragOver(id)
+  }
+
+  const onDrop = (targetId: number) => {
+    if (dragId.current === null || dragId.current === targetId) {
+      setDragOver(null)
+      return
+    }
+    setProjects((prev) => {
+      const result = [...prev]
+      const fromIdx = result.findIndex((p) => p.id === dragId.current)
+      const toIdx = result.findIndex((p) => p.id === targetId)
+      const [moved] = result.splice(fromIdx, 1)
+      result.splice(toIdx, 0, moved)
+      return result
+    })
+    dragId.current = null
+    setDragOver(null)
+  }
+
+  const onDragEnd = () => {
+    dragId.current = null
+    setDragOver(null)
   }
 
   const filtered = filter === "Все" ? projects : projects.filter((p) => p.tag === filter)
@@ -131,7 +164,6 @@ export default function ProjectsSection() {
         </button>
       </div>
 
-      {/* Фильтры */}
       <div className="flex gap-2 mb-8 flex-wrap">
         {filterTabs.map((tab) => {
           const count = tab.label === "Все" ? projects.length : projects.filter((p) => p.tag === tab.label).length
@@ -160,24 +192,39 @@ export default function ProjectsSection() {
         )}
         {filtered.map((p) => {
           const tagMeta = TAGS.find((t) => t.label === p.tag) ?? TAGS[0]
+          const isDragTarget = dragOver === p.id
           return (
             <div
               key={p.id}
-              className={`relative rounded-2xl bg-gradient-to-br ${p.color} border border-white/10 backdrop-blur-sm p-6 group`}
+              draggable={editing !== p.id}
+              onDragStart={() => onDragStart(p.id)}
+              onDragOver={(e) => onDragOver(e, p.id)}
+              onDrop={() => onDrop(p.id)}
+              onDragEnd={onDragEnd}
+              className={`relative rounded-2xl bg-gradient-to-br ${p.color} border backdrop-blur-sm p-6 group transition-all duration-200 ${
+                isDragTarget
+                  ? "border-white/50 scale-[1.02] shadow-lg shadow-white/10"
+                  : "border-white/10"
+              } ${editing !== p.id ? "cursor-grab active:cursor-grabbing" : ""}`}
             >
               <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button
                   onClick={() => startEdit(p)}
-                  className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                  className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer"
                 >
                   <Icon name="Pencil" size={12} className="text-white/70" />
                 </button>
                 <button
                   onClick={() => deleteProject(p.id)}
-                  className="p-1.5 rounded-full bg-white/10 hover:bg-red-500/30 transition-colors"
+                  className="p-1.5 rounded-full bg-white/10 hover:bg-red-500/30 transition-colors cursor-pointer"
                 >
                   <Icon name="Trash2" size={12} className="text-white/70" />
                 </button>
+              </div>
+
+              {/* Иконка перетаскивания */}
+              <div className="absolute top-4 left-4 opacity-0 group-hover:opacity-30 transition-opacity">
+                <Icon name="GripVertical" size={14} className="text-white" />
               </div>
 
               {editing === p.id ? (
@@ -203,8 +250,7 @@ export default function ProjectsSection() {
                 </div>
               ) : (
                 <>
-                  {/* Кликабельный статус */}
-                  <div className="relative mb-3" ref={tagPicker === p.id ? tagPickerRef : null}>
+                  <div className="relative mb-3 pl-4" ref={tagPicker === p.id ? tagPickerRef : null}>
                     <button
                       onClick={() => setTagPicker(tagPicker === p.id ? null : p.id)}
                       className={`inline-flex items-center gap-1.5 text-xs border rounded-full px-2.5 py-0.5 transition-all hover:opacity-80 cursor-pointer ${tagMeta.color}`}
@@ -215,7 +261,7 @@ export default function ProjectsSection() {
                     </button>
 
                     {tagPicker === p.id && (
-                      <div className="absolute top-7 left-0 z-50 bg-neutral-900 border border-white/15 rounded-xl p-1.5 flex flex-col gap-1 shadow-xl min-w-[130px]">
+                      <div className="absolute top-7 left-4 z-50 bg-neutral-900 border border-white/15 rounded-xl p-1.5 flex flex-col gap-1 shadow-xl min-w-[130px]">
                         {TAGS.map((t) => (
                           <button
                             key={t.label}
